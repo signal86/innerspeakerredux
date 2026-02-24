@@ -1,10 +1,10 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"net/http"
 	"os"
-	"crypto/rand"
 
 	// "gorm.io/gorm"
 
@@ -13,7 +13,7 @@ import (
 	"github.com/signal86/innerspeakerredux/model"
 )
 
-// Running the server with extra data will not start the server and will 
+// Running the server with extra data will not start the server and will
 // instead manual add a user to the db
 func KeyGenerator(username string) string {
 	newKey := string(rand.Text())
@@ -45,6 +45,8 @@ func main() {
 	}
 	model.ConnectDatabase()
 	router := gin.Default()
+	router.RedirectTrailingSlash = false
+	router.RedirectFixedPath = false
 	router.LoadHTMLGlob("views/templates/*.tmpl")
 	router.Static("/assets", "./views/assets")
 
@@ -52,6 +54,10 @@ func main() {
 	router.GET("/software", controller.GetSoftware)
 	router.GET("/datastore", controller.GetDatastore)
 	router.POST("/login", controller.LoginHandler)
+	router.POST("/upload", controller.PostFileUpload)
+	router.POST("/delete", controller.PostFileDelete)
+	router.POST("/toggle-visibility", controller.PostVisibilityToggle)
+	router.GET("/file/:username/:filename", controller.GetFile)
 	router.NoRoute(func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/")
 	})

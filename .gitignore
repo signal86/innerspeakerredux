@@ -32,3 +32,6 @@ coverage
 go.sum
 
 .env
+
+./datastore/*
+datastore/*

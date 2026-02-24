@@ -32,7 +32,7 @@ func ConnectDatabase() {
 		panic("failed to connect database")
 	}
 
-	database.AutoMigrate(&User{})
+	database.AutoMigrate(&User{}, &File{})
 
 	DB = database
 }

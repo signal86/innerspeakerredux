@@ -2,8 +2,8 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"net/http"
 	"github.com/google/uuid"
+	"net/http"
 
 	"github.com/signal86/innerspeakerredux/model"
 )
@@ -21,8 +21,7 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 	var user model.User
-	if err := model.DB.First(&user, "password = ?", model.Hash(loginForm.Key)).Error; 
-	err != nil {
+	if err := model.DB.First(&user, "password = ?", model.Hash(loginForm.Key)).Error; err != nil {
 		c.HTML(http.StatusUnauthorized, "login.tmpl", gin.H{
 			"error": "Invalid key",
 		})
@@ -34,5 +33,3 @@ func LoginHandler(c *gin.Context) {
 	c.SetCookie("session_token", session_token, 3600, "/", "localhost", true, true)
 	c.Redirect(http.StatusFound, "/datastore")
 }
-
-

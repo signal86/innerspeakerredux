@@ -1,20 +1,134 @@
 {{ template "header" }}
-<div class="flex flex-col items-center h-screen">
-    <a href="/">
-    <button type="button" class="text-inherit text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">
-        <span class="hover-underline-animation">Back</span>
-    </button>
-    </a>
-    <!-- <p class="text-white text-center text-3xl fontmain font-bold"><a class="underline text-cyan-300" href="/">back</a></p> -->
-    <div class="flex flex-col items-center justify-center h-screen">
-        <div>
-            <p class="text-white text-center text-6xl fontmain font-bold">INNERSPEAKER</p>
+<div class="min-h-screen bg-gray-900">
+    <div class="fixed top-0 left-0 w-full bg-gray-900 text-white shadow-md z-50">
+        <div class="flex items-center justify-between px-6 h-14">
+            <p class="text-white text-center text-3xl fontmain font-bold">innerspeaker.org</p>
+            <a href="/">
+                <button type="button" class="text-white bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-500 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2">
+                    <span class="hover-underline-animation">Back</span>
+                </button>
+            </a>
         </div>
-        <a href="https://github.com/signal86" target="_blank">
-        <button type="button" class="text-inherit text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">
-            <span class="hover-underline-animation">GitHub</span>
-        </button>
-        </a>
+    </div>
+
+    <div class="min-h-screen bg-gray-900 flex flex-col items-center justify-start pt-24 pb-12 px-6">
+        <div class="w-full max-w-2xl mx-auto space-y-8">
+
+            {{ if .Error }}
+            <div class="w-full max-w-2xl mx-auto mb-4 px-4 py-3 bg-red-900 border border-red-600 rounded-lg text-red-200 text-sm">
+                {{ .Error }}
+            </div>
+            {{ end }}
+            <!-- Upload Area -->
+            <form class="flex flex-col items-center" id="upload-form" enctype="multipart/form-data" method="POST" action="/upload">
+                <div style="position:relative; height:10rem;" class="w-full border-2 border-dashed border-gray-500 rounded-xl cursor-pointer bg-gray-700 hover:bg-gray-600 hover:border-gray-400 transition-all duration-200 group"
+                    id="drop-zone"
+                    ondragover="event.preventDefault(); this.classList.add('border-cyan-400', 'bg-gray-600')"
+                    ondragleave="this.classList.remove('border-cyan-400', 'bg-gray-600')"
+                    ondrop="handleDrop(event)"
+                    onclick="document.getElementById('file-input').click()"
+                >
+                    <div class="w-full">
+                        <svg style="width:2.5rem; height:2.5rem; flex-shrink:0; margin-bottom:0.75rem;" class="text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <p class="text-white text-sm">
+                            <span class="font-semibold text-cyan-300">Click to upload</span> or drag &amp; drop
+                        </p>
+                    </div>
+                </div>
+                <input id="file-input" type="file" name="files" multiple class="hidden" onchange="updateFileLabel(this)"/>
+                <div id="selected-files" class="mt-2 text-white text-xs text-center hidden"></div>
+                <button
+                    type="submit"
+                    class="items-stretch mt-4 w-full text-white bg-cyan-600 hover:bg-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-700 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors duration-200"
+                >
+                    Upload Files
+                </button>
+            </form>
+
+            <!-- File List -->
+            <div>
+                <h2 class="text-center w-full text-white text-lg font-semibold mb-3 fontmain">Your Files</h2>
+
+                {{ if .Files }}
+                <ul class="flex flex-col gap-2">
+                    {{ range .Files }}
+                    <li class="flex items-center justify-between bg-gray-700 rounded-lg px-4 py-3 border border-gray-600 hover:border-gray-400 transition-colors">
+                        <span class="text-white text-sm truncate flex-1 mr-4">{{ .Name }}</span>
+
+                        <div class="flex items-center gap-3 shrink-0">
+                            <a href="/file/{{ $.Username }}/{{ .Name }}" target="_blank" class="text-cyan-400 hover:text-cyan-300 transition-colors">
+                                <svg style="width:1rem; height:1rem; flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                </svg>
+                            </a>
+
+                            <!-- Visibility Toggle -->
+                            <form method="POST" action="/toggle-visibility" class="flex items-center gap-2">
+                                <input type="hidden" name="filename" value="{{ .Name }}"/>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        name="visible"
+                                        class="sr-only peer"
+                                        {{ if .Visible }}checked{{ end }}
+                                        onchange="this.closest('form').submit()"
+                                    />
+                                    <div class="w-9 h-5 bg-gray-500 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
+                                    <span class="ml-2 text-xs text-white w-14">{{ if .Visible }}Public{{ else }}Hidden{{ end }}</span>
+                                </label>
+                            </form>
+
+                            <!-- Delete Button -->
+                            <!--<form method="POST" action="/delete" onsubmit="return confirm('Delete {{ .Name }}?')">-->
+                            <form method="POST" action="/delete">
+                                <input type="hidden" name="filename" value="{{ .Name }}"/>
+                                <button
+                                    type="submit"
+                                    class="text-white hover:text-red-400 transition-colors duration-150 p-1 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    title="Delete file"
+                                >
+                                    <svg style="width:1rem; height:1rem; flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                    {{ end }}
+                </ul>
+                {{ else }}
+                <div class="flex flex-col items-center justify-center py-12 text-white bg-gray-700 rounded-xl border border-gray-600">
+                    <svg style="width:2.5rem; height:2.5rem; flex-shrink:0;" class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <p class="text-sm">No files yet</p>
+                </div>
+                {{ end }}
+            </div>
+
+        </div>
     </div>
 </div>
+
+<script>
+function updateFileLabel(input) {
+    const el = document.getElementById('selected-files');
+    if (input.files.length === 0) { el.classList.add('hidden'); return; }
+    const names = Array.from(input.files).map(f => f.name).join(', ');
+    el.textContent = `Selected: ${names}`;
+    el.classList.remove('hidden');
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    const zone = document.getElementById('drop-zone');
+    zone.classList.remove('border-cyan-400', 'bg-gray-600');
+    const input = document.getElementById('file-input');
+    input.files = event.dataTransfer.files;
+    updateFileLabel(input);
+}
+</script>
+
 {{ template "footer" }}
