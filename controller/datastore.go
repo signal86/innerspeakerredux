@@ -82,7 +82,15 @@ func PostFileUpload(c *gin.Context) {
 
 	files := form.File["files"]
 	for _, header := range files {
-		destination := filepath.Join(uploadDirectory, user.Username, header.Filename)
+		userDir := filepath.Join(uploadDirectory, user.Username)
+
+		if err := os.MkdirAll(userDir, os.ModePerm); err != nil {
+			c.Redirect(http.StatusFound, "/datastore?error=Failed to create user directory")
+			return
+		}
+
+		filename := filepath.Base(header.Filename)
+		destination := filepath.Join(userDir, filename)
 
 		var existing model.File
 		if err := model.DB.Where("name = ? AND username = ?", header.Filename, user.Username).First(&existing).Error; err == nil {
